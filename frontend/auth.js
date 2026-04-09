@@ -114,3 +114,130 @@ document.querySelector(".login button").onclick = async (e) => {
     console.error(err);
   }
 };
+
+//
+const API_URL = window.location.origin && window.location.origin !== 'null' ? window.location.origin : 'http://127.0.0.1:5000';
+
+console.log("auth.js is loaded", API_URL);
+
+function showLogin() {
+  const signupForm = document.querySelector(".signup");
+  const loginForm = document.querySelector(".login");
+  signupForm.classList.remove("active");
+  loginForm.classList.add("active");
+}
+
+function showSignup() {
+  const signupForm = document.querySelector(".signup");
+  const loginForm = document.querySelector(".login");
+  loginForm.classList.remove("active");
+  signupForm.classList.add("active");
+}
+
+function goHome() {
+  window.location.href = "homepage.html";
+}
+
+function handleFetchError(res) {
+  if (!res.ok) throw new Error(res.statusText || 'Network error');
+  return res.json();
+}
+
+// SIGNUP
+document.addEventListener("DOMContentLoaded", () => {
+  const signupButton = document.querySelector(".signup button");
+  const loginButton = document.querySelector(".login button");
+
+  signupButton.addEventListener("click", async (e) => {
+    e.preventDefault();
+
+    const data = {
+      name: document.getElementById("signupName").value.trim(),
+      email: document.getElementById("signupEmail").value.trim(),
+      password: document.getElementById("signupPassword").value.trim()
+    };
+
+    if (!data.name || !data.email || !data.password) {
+      alert("Please fill all fields");
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_URL}/signup`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(data)
+      });
+
+      const result = await handleFetchError(res);
+      if (res.status === 201) {
+        const loginRes = await fetch(`${API_URL}/login`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            email: data.email,
+            password: data.password
+          })
+        });
+
+        const loginResult = await handleFetchError(loginRes);
+
+        if (loginRes.status === 200) {
+          localStorage.setItem("userID", loginResult.userID);
+          localStorage.setItem("name", loginResult.name);
+          window.location.href = "dashboard.html";
+        } else {
+          alert("Account created! Please log in.");
+          showLogin();
+        }
+      } else {
+        alert(result.error || "Signup failed");
+      }
+    } catch (err) {
+      alert("Signup failed: " + err.message);
+      console.error(err);
+    }
+  });
+
+  loginButton.addEventListener("click", async (e) => {
+    e.preventDefault();
+
+    const data = {
+      email: document.getElementById("loginEmail").value.trim(),
+      password: document.getElementById("loginPassword").value.trim()
+    };
+
+    if (!data.email || !data.password) {
+      alert("Please fill all fields");
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_URL}/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(data)
+      });
+
+      const result = await handleFetchError(res);
+
+      if (res.status === 200) {
+        localStorage.setItem("userID", result.userID);
+        localStorage.setItem("name", result.name);
+        window.location.href = "dashboard.html";
+      } else {
+        alert(result.error || "Login failed");
+      }
+    } catch (err) {
+      alert("Login failed: " + err.message);
+      console.error(err);
+    }
+  });
+});
+
